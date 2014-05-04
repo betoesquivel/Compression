@@ -95,6 +95,24 @@ void GenerateCodes(const INode* node, const string prefix, HuffCodeMap& outCodes
 
 void decode(const INode* node, string prefix, string encoded, int i, InverseHuffCodeMap& iCodes)
 {
+    for (int i = 0; i < encoded.length(); i++){
+        string code = "";
+        while(const InternalNode* in = dynamic_cast<const InternalNode*>(node)){
+            cout << "Found not leaf node at index: "<<i << endl;
+            code += encoded.substr(i, 1);
+            i++;
+            char op = encoded[i];
+            if (op == '0'){
+                node = in -> left;
+            }else{
+                node = in -> right;
+            }
+        }
+        code += encoded.substr(i, 1);
+        cout << iCodes[code] << " at index: " << i;
+        cout << endl;
+        node = huffRoot;
+    }
 }
 
 int main()
