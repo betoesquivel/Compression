@@ -7,7 +7,7 @@
 
 using namespace std;
 const int UniqueSymbols = 1 << CHAR_BIT;
-string SampleString = "bbb cc iiiiiiiiiiiiiiiiii aaaaaaaaaa d";
+string SampleString = "bbb iiiiiiiiiiiiiiiiii aaaaaaaaaa d";
 
 typedef map<char, string> HuffCodeMap;
 typedef map<string, char> InverseHuffCodeMap;
@@ -98,7 +98,6 @@ void decode(const INode* node, string prefix, string encoded, int i, InverseHuff
     for (int i = 0; i < encoded.length(); i++){
         string code = "";
         while(const InternalNode* in = dynamic_cast<const InternalNode*>(node)){
-            cout << "Found not leaf node at index: "<<i << endl;
             code += encoded.substr(i, 1);
             i++;
             char op = encoded[i];
@@ -107,8 +106,10 @@ void decode(const INode* node, string prefix, string encoded, int i, InverseHuff
             }else{
                 node = in -> right;
             }
+            cout << "Read: " << code << endl;
         }
         code += encoded.substr(i, 1);
+        cout << "Read: " << code << endl;
         cout << iCodes[code] << " at index: " << i;
         cout << endl;
         node = huffRoot;
@@ -146,8 +147,6 @@ int main()
     cout << encoded <<endl;
 
     cout << "Decoded: " <<endl;
-    string temp = encoded.substr(0,1);
-    cout << "This is the temp " << temp<< endl;
     decode ( huffRoot, "" ,  encoded, 0, iCodes);
     cout << endl;
 
