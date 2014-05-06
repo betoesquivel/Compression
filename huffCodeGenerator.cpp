@@ -201,7 +201,6 @@ string decode(const INode* node, string prefix, string encoded, int i, InverseHu
         }
         //code += encoded.substr(i, 1);
         result += iCodes[code];
-        cout <<result<<endl;
         node = huffRoot;
     }
 
@@ -215,6 +214,18 @@ void printMenu(){
     cout<<" 1) Code "<<endl;
     cout<<" 2) Decode " <<endl;
     cout<<" 9) Salir " <<endl;
+}
+
+double getHuffmanCompressionRate(string uncompressed, string compressed) {
+		double rate = 0;
+		rate = ( compressed.length() * 1.0 ) / ( uncompressed.length() * 8.0 ); 
+		return rate; 
+}
+
+double getLzwCompressionRate(string uncompressed, vector<int> compressed) {
+		double rate = 0;
+		rate =  ( compressed.size() * 12.0 ) / ( uncompressed.length() * 8.0 );
+		return rate; 
 }
 
 void huffmanCompress(string contenido, string outputName){
@@ -248,6 +259,9 @@ void huffmanCompress(string contenido, string outputName){
 
 	archSal.close();
 	delete root; 
+	
+	//print compression rate
+	cout << "Huffman compression rate: " << getHuffmanCompressionRate (contenido, encoded) << endl;
 }
 
 void lzwCompress(string contenido, string outputName){
@@ -271,6 +285,9 @@ void lzwCompress(string contenido, string outputName){
 	archSalLzw << compS << endl;
 	
 	archSalLzw.close();
+	
+	//print compression rate
+	cout << "LZW compression rate: " << getLzwCompressionRate (contenido, compressed) << endl;
 }
 
 void huffmanDecompress(string inputName, string outputName){
@@ -282,7 +299,6 @@ void huffmanDecompress(string inputName, string outputName){
 
 	for(int i=0; i<256; i++) {
 		archEnt >> frequencies[i];
-		cout << frequencies[i];
 	}
 	cout<<endl;
 
