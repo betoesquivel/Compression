@@ -11,7 +11,6 @@
 
 using namespace std;
 const int UniqueSymbols = 1 << CHAR_BIT;
-string SampleString = "bbb iiiiiiiiiiiiiiiiii aaaaaaa dd";
 
 typedef map<char, string> HuffCodeMap;
 typedef map<string, char> InverseHuffCodeMap;
