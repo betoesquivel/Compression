@@ -207,6 +207,21 @@ string decode(const INode* node, string prefix, string encoded, int i, InverseHu
 }
 // FIN DE HUFFMAN
 
+void printHuffmanTree(const INode* node)
+{
+    if (const LeafNode* lf = dynamic_cast<const LeafNode*>(node))
+    {
+        cout << "L:" << lf->f << endl;
+    }
+    else if (const InternalNode* in = dynamic_cast<const InternalNode*>(node))
+    {
+		cout << "I:" << in->f << endl;
+        printHuffmanTree(in->left);
+        printHuffmanTree(in->right);
+    }
+}
+
+
 void printMenu(){
     cout<<endl;
     cout<<"------------ MENU ---------------"<<endl;
@@ -257,7 +272,12 @@ void huffmanCompress(string contenido, string outputName){
 	archSal<<encoded<<endl;
 
 	archSal.close();
+	
+	//print huffman tree
+	printHuffmanTree(root);
+	
 	delete root; 
+	
 	
 	//print compression rate
 	cout << "Huffman compression rate: " << getHuffmanCompressionRate (contenido, encoded) << endl;
