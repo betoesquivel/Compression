@@ -217,6 +217,118 @@ void printMenu(){
     cout<<" 9) Salir " <<endl;
 }
 
+void huffmanCompress(string contenido, string outputName){
+	
+	ofstream archSal (outputName.c_str());
+	
+	int frequencies[UniqueSymbols] = {0};
+	for (int i = 0; i < contenido.length(); i++ ){
+		frequencies[contenido[i]] += 1;
+	}
+
+	//create huffCode tree and get the huffcode map
+
+	INode* root = BuildTree(frequencies);
+	huffRoot = root;
+	HuffCodeMap codes;
+	InverseHuffCodeMap iCodes;
+	GenerateCodes(root, "", codes);
+
+	for(int i=0; i<256; i++) {
+		archSal<<frequencies[i]<<" ";
+	}
+
+	string encoded = "";
+	for (int i = 0; i < contenido.length(); i++){
+		encoded += codes[contenido[i]];
+	}
+
+	cout <<"Linea encoded:  " << encoded <<endl;
+	archSal<<encoded<<endl;
+
+	archSal.close();
+	delete root; 
+}
+
+void lzwCompress(string contenido, string outputName){
+	ofstream archSalLzw (outputName.c_str());
+
+	vector<int> compressed;
+	
+	//call compress with an iterator pointing at the back of compressed
+	compress(contenido, back_inserter(compressed));
+	
+	//compressed tiene mi resultado
+
+	//para convertir el vector a string usando stringstream
+	ostringstream oss;
+	copy(compressed.begin(), compressed.end() - 1, ostream_iterator<int>(oss, " "));
+	oss << compressed.back();
+	string compS = oss.str();
+	cout << endl;
+	
+	//imprimir a archivo de salida
+	archSalLzw << compS << endl;
+	
+	archSalLzw.close();
+}
+
+void huffmanDecompress(string inputName, string outputName){
+	ifstream archEnt (inputName.c_str());
+	ofstream archSal (outputName.c_str());
+
+	// Build frequency table
+	int frequencies[UniqueSymbols] = {0};
+
+	for(int i=0; i<256; i++) {
+		archEnt >> frequencies[i];
+		cout << frequencies[i];
+	}
+	cout<<endl;
+
+	INode* root = BuildTree(frequencies);
+	huffRoot = root;
+	HuffCodeMap codes;
+	InverseHuffCodeMap iCodes;
+	GenerateCodes(root, "", codes);
+	for (HuffCodeMap::const_iterator it = codes.begin(); it != codes.end(); ++it)
+	{
+		iCodes[it->second] = it->first;
+	}
+	string linea;
+	getline(archEnt, linea);
+	
+	//quitar espacios
+	while(linea[0] ==  ' ') {
+		linea = linea.substr(1);
+	}
+
+	archSal << decode ( huffRoot, "" ,  linea, 0, iCodes);
+
+	archEnt.close();
+	archSal.close();
+	delete root; 
+}
+
+void lzwDecompress(string inputName, string outputName){
+	ifstream archEntLzw (inputName.c_str());
+	ofstream archSalLzw (outputName.c_str());
+	
+	vector<int> comp;
+	int c;
+	while (archEntLzw >> c){
+		comp.push_back(c);
+	}
+	string decompressed = decompress(comp.begin(), comp.end());
+	//~ cout << decompressed << endl;
+
+	//imprimo a archivo
+	archSalLzw << decompressed << endl;
+	
+	archEntLzw.close();
+	archSalLzw.close();
+}
+
 int main()
 {
 	int opcionElegida = 0;
@@ -235,7 +347,8 @@ int main()
 			cout<<"Introduzca nombre de archivo de salida (sin extensión) "<<endl;
 			cin>>nomArchSal;
 
-            string nomArchSalLzw = nomArchSal;
+            string nomArchEntLzw = nomArchEnt + "lzw";
+            string nomArchSalLzw = nomArchSal + "lzw";
 
 			if(opcionElegida == 1) {
 				nomArchEnt += ".txt";
@@ -243,11 +356,8 @@ int main()
                 nomArchSalLzw += ".lzw";
 
 				ifstream archEnt (nomArchEnt.c_str());
-				ofstream archSal (nomArchSal.c_str());
 				string linea;
 
-				// Build frequency table
-				int frequencies[UniqueSymbols] = {0};
 				getline (archEnt, linea);
 				string contenido = linea;
 				while ( getline (archEnt, linea) ){
@@ -255,137 +365,34 @@ int main()
 					contenido += "\n"+linea;
 
 				}
-
-				cout << "CONTENIDO" << contenido << endl;
-				//linea+="\n";
-				for (int i = 0; i < contenido.length(); i++ ){
-					frequencies[contenido[i]] += 1;
-				}
-
-                //create huffCode tree and get the huffcode map
-
-				INode* root = BuildTree(frequencies);
-				huffRoot = root;
-				HuffCodeMap codes;
-				InverseHuffCodeMap iCodes;
-				GenerateCodes(root, "", codes);
-
-				/*
-				archSal << codes.size() << endl;
-				for (HuffCodeMap::const_iterator it = codes.begin(); it != codes.end(); ++it)
-				{
-					if (string(1,it->first) == "\n"){
-						archSal << "salto " << it -> second << endl;
-					}else {
-						archSal << it->first << " ";
-						archSal << it->second << endl;
-						iCodes[it->second] = it->first;
-					}
-				}
-				*/
-
-				for(int i=0; i<256; i++) {
-					archSal<<frequencies[i]<<" ";
-				}
-
-				string encoded = "";
-				for (int i = 0; i < contenido.length(); i++){
-					encoded += codes[contenido[i]];
-				}
-
-				cout <<"Linea encoded:  " << encoded <<endl;
-				archSal<<encoded<<endl;
-
-
-				archSal.close();
 				archEnt.close();
 
-                //sigue lzw
-                //usare el string contenido y los metodos de lzw
-                //para encode, y tengo que abrir el archSal nuevamente
-				ofstream archSalLzw (nomArchSalLzw.c_str());
+				//~ cout << "CONTENIDO" << contenido << endl;
+				
+				//Huffman
+				huffmanCompress(contenido,nomArchSal);
 
-                vector<int> compressed;
-                //call compress with an iterator pointing at the back of compressed
-                compress(contenido, back_inserter(compressed));
-                //compressed tiene mi resultado
-                //print everythin contained in the compressed iterator using an ostream_iterator
-                copy(compressed.begin(), compressed.end(), ostream_iterator<int>(cout, ", "));
-                ostringstream oss;
-                copy(compressed.begin(), compressed.end(), ostream_iterator<int>(oss, ", "));
-                string compS = oss.str();
-                cout << endl;
-                cout << "String comprimido..." << endl;
-                cout << compS << endl;
-
-                //decompress returns a string
-//                string decompressed = decompress(compressed.begin(), compressed.end());
-//                cout << decompressed << endl;
-
-                archSalLzw.close();
+                //LZW
+                lzwCompress(contenido, nomArchSalLzw);
 
 			} else if (opcionElegida == 2) {
-				// Build frequency table
-				int frequencies[UniqueSymbols] = {0};
 
+				//Huffman
 				nomArchEnt += ".huf";
 				nomArchSal += ".txt";
+				huffmanDecompress(nomArchEnt, nomArchSal);
 
-				ifstream archEnt (nomArchEnt.c_str());
-				ofstream archSal (nomArchSal.c_str());
-
-				int cantCodes = 0;
-				//archEnt>>cantCodes;
-
-				for(int i=0; i<256; i++) {
-					archEnt >> frequencies[i];
-					cout << frequencies[i];
-				}
-				cout<<endl;
-
-				INode* root = BuildTree(frequencies);
-				huffRoot = root;
-				HuffCodeMap codes;
-				InverseHuffCodeMap iCodes;
-				GenerateCodes(root, "", codes);
-				for (HuffCodeMap::const_iterator it = codes.begin(); it != codes.end(); ++it)
-				{
-						iCodes[it->second] = it->first;
-						cout<<"codes: "<<it->second<<"   "<<it->first<<endl;
-				}
-				string linea;
-				getline(archEnt, linea);
-				while(linea[0] ==  ' ') {
-					linea = linea.substr(1);
-				}
-				/*
-				while(getline(archEnt, linea) != NULL) {
-					//cout << "linea:  " << linea << endl;
-				}
-				cout << "linea:  " << linea << endl;
-				*/
-				cout << "linea:" << linea << endl;
-				archSal << decode ( huffRoot, "" ,  linea, 0, iCodes);
+                //LZW
+                nomArchEntLzw += ".lzw";
+                nomArchSalLzw += ".txt";
+                lzwDecompress(nomArchEntLzw, nomArchSalLzw);
+                
 			}
 
 
 
 		}
 	}
-
-    /*
-    cout << "Original: "<<endl;
-    cout << SampleString << endl;
-    cout << "Encoded: " <<endl;
-    cout << encoded <<endl;
-
-
-    cout << "Decoded: " <<endl;
-    decode ( huffRoot, "" ,  encoded, 0, iCodes);
-    cout << endl;
-
-    delete root;
-    */
 
     return 0;
 }
