@@ -4,6 +4,8 @@
 #include <climits> // for CHAR_BIT
 #include <iterator>
 #include <algorithm>
+#include <fstream>
+#include <string>
 
 using namespace std;
 const int UniqueSymbols = 1 << CHAR_BIT;
@@ -93,8 +95,9 @@ void GenerateCodes(const INode* node, const string prefix, HuffCodeMap& outCodes
     }
 }
 
-void decode(const INode* node, string prefix, string encoded, int i, InverseHuffCodeMap& iCodes)
+string decode(const INode* node, string prefix, string encoded, int i, InverseHuffCodeMap& iCodes)
 {
+	string result = "";
     for (int i = 1; i < encoded.length(); i++){
         string code = "";
         i--;
@@ -113,46 +116,162 @@ void decode(const INode* node, string prefix, string encoded, int i, InverseHuff
             
         }
         //code += encoded.substr(i, 1);
-        cout << iCodes[code];
+        result += iCodes[code];
+        cout <<result<<endl;
         node = huffRoot;
     }
+    
+    return result;
 }
 
 int main()
 {
-    // Build frequency table
-    int frequencies[UniqueSymbols] = {0};
-    for (int i = 0; i < SampleString.length(); i++ ){
-        frequencies[SampleString[i]] += 1;
-    }
+	int opcionElegida = 0;
+	while(opcionElegida != 9) {
+		
+	
+		cout<<endl;
+		cout<<"------------ MENU ---------------"<<endl;
+		cout<<" 1) Code "<<endl;
+		cout<<" 2) Decode " <<endl;
+		cout<<" 9) Salir " <<endl;
+		cin>>opcionElegida;
+		cout<<endl;
+		cout<<endl;
+	
+		
+		if(opcionElegida != 9) {
+			
+			string nomArchEnt, nomArchSal;
+			cout<<"Introduzca nombre de archivo de entrada (sin extensión) "<<endl;
+			cin>>nomArchEnt;
+			cout<<"Introduzca nombre de archivo de salida (sin extensión) "<<endl;
+			cin>>nomArchSal;
+			
+			if(opcionElegida == 1) {
+				nomArchEnt += ".txt";
+				nomArchSal += ".huf";
+				
+				ifstream archEnt (nomArchEnt.c_str());
+				ofstream archSal (nomArchSal.c_str());
+				string linea;
+				
+				// Build frequency table
+				int frequencies[UniqueSymbols] = {0};
+				getline (archEnt, linea);
+				string contenido = linea;
+				while ( getline (archEnt, linea) ){
+					
+					contenido += "\n"+linea; 
+					
+				}
+			
+				cout << "CONTENIDO" << contenido << endl;
+				//linea+="\n";
+				for (int i = 0; i < contenido.length(); i++ ){
+					frequencies[contenido[i]] += 1;
+				}
+				
+			
 
-    INode* root = BuildTree(frequencies);
-    huffRoot = root;
-    HuffCodeMap codes;
-    InverseHuffCodeMap iCodes;
-    GenerateCodes(root, "", codes);
-
-    for (HuffCodeMap::const_iterator it = codes.begin(); it != codes.end(); ++it)
-    {
-        cout << it->first << " ";
-        cout << it->second;
-        cout << endl;
-        iCodes[it->second] = it->first;
-    }
-    string encoded = "";
-    for (int i = 0; i < SampleString.length(); i++){
-        encoded += codes[SampleString[i]];
-    }
+				INode* root = BuildTree(frequencies);
+				huffRoot = root;
+				HuffCodeMap codes;
+				InverseHuffCodeMap iCodes;
+				GenerateCodes(root, "", codes);
+				
+				/*
+				archSal << codes.size() << endl;
+				for (HuffCodeMap::const_iterator it = codes.begin(); it != codes.end(); ++it)
+				{
+					if (string(1,it->first) == "\n"){
+						archSal << "salto " << it -> second << endl;	
+					}else {
+						archSal << it->first << " ";
+						archSal << it->second << endl;
+						iCodes[it->second] = it->first;
+					}
+				}
+				*/
+				
+				for(int i=0; i<256; i++) {
+					archSal<<frequencies[i]<<" ";
+				}
+				
+				string encoded = "";
+				for (int i = 0; i < contenido.length(); i++){
+					encoded += codes[contenido[i]];
+				}
+				
+				cout <<"Linea encoded:  " << encoded <<endl;
+				archSal<<encoded<<endl;
+			
+						
+				archSal.close();
+				archEnt.close();
+				
+			} else if (opcionElegida == 2) {
+				// Build frequency table
+				int frequencies[UniqueSymbols] = {0};
+				
+				nomArchEnt += ".huf";
+				nomArchSal += ".txt";
+				
+				ifstream archEnt (nomArchEnt.c_str());
+				ofstream archSal (nomArchSal.c_str());
+				
+				int cantCodes = 0;
+				//archEnt>>cantCodes;
+				
+				for(int i=0; i<256; i++) {
+					archEnt >> frequencies[i];
+					cout << frequencies[i];
+				}
+				cout<<endl;
+				
+				INode* root = BuildTree(frequencies);
+				huffRoot = root;
+				HuffCodeMap codes;
+				InverseHuffCodeMap iCodes;
+				GenerateCodes(root, "", codes);
+				for (HuffCodeMap::const_iterator it = codes.begin(); it != codes.end(); ++it)
+				{
+						iCodes[it->second] = it->first;
+						cout<<"codes: "<<it->second<<"   "<<it->first<<endl;
+				}
+				string linea;
+				getline(archEnt, linea);
+				while(linea[0] ==  ' ') {
+					linea = linea.substr(1);
+				}
+				/*
+				while(getline(archEnt, linea) != NULL) {
+					//cout << "linea:  " << linea << endl;	
+				}
+				cout << "linea:  " << linea << endl;
+				*/	
+				cout << "linea:" << linea << endl;
+				archSal << decode ( huffRoot, "" ,  linea, 0, iCodes);
+			}
+			
+			
+			
+		}
+	}
+	
+    /*
     cout << "Original: "<<endl;
     cout << SampleString << endl;
     cout << "Encoded: " <<endl;
     cout << encoded <<endl;
+    
 
     cout << "Decoded: " <<endl;
     decode ( huffRoot, "" ,  encoded, 0, iCodes);
     cout << endl;
 
     delete root;
+    */
 
     return 0;
 }
